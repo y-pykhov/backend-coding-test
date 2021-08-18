@@ -87,7 +87,10 @@ module.exports = (db) => {
     });
 
     app.get('/rides', (req, res) => {
-        db.all('SELECT * FROM Rides', function (err, rows) {
+        const page = Math.floor(req.query.page);
+        const limit = Math.floor(req.query.limit);
+
+        db.all('SELECT COUNT(*) as count FROM Rides', function (err, rows) {
             if (err) {
                 logger.error(err);
                 return res.send({
@@ -96,14 +99,46 @@ module.exports = (db) => {
                 });
             }
 
-            if (rows.length === 0) {
+            const [{ count }] = rows;
+
+            if (count === 0) {
                 return res.send({
                     error_code: 'RIDES_NOT_FOUND_ERROR',
                     message: 'Could not find any rides',
                 });
             }
 
-            res.send(rows);
+            let limitClause = '';
+
+            if (limit >= 0) {
+                limitClause = `LIMIT ${limit}`;
+
+                if (page >= 1) {
+                    limitClause += ` OFFSET ${(page - 1) * limit}`;
+                }
+            }
+
+            db.all(`SELECT * FROM Rides ${limitClause}`, function (err, rows) {
+                if (err) {
+                    logger.error(err);
+                    return res.send({
+                        error_code: 'SERVER_ERROR',
+                        message: 'Unknown error',
+                    });
+                }
+
+                if (rows.length === 0) {
+                    return res.send({
+                        error_code: 'RIDES_NOT_FOUND_ERROR',
+                        message: 'Could not find any rides for specified page and limit',
+                    });
+                }
+
+                res.send({
+                    count,
+                    rows,
+                });
+            });
         });
     });
 

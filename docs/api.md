@@ -66,7 +66,15 @@ body:
 ```
 
 ### GET /rides
-This endpoint returns information about all rides
+This endpoint returns information about all rides  
+Data can be retrieved in chunks for pagination
+
+#### Request
+```
+query:
+  page: Number                  – pagination page
+  limit: Number                 – number of rides per page
+```
 
 #### Response
 ```
@@ -74,20 +82,24 @@ headers:
   content-type: application/json
 
 body:
-  [
-    {
-      rideID: Number            – id
-      startLat: Number          – start lattitude
-      startLong: Number         – start longitude
-      endLat: Number            – end lattitude
-      endLong: Number           – end longitude
-      riderName: String         – rider name
-      driverName: String        – driver name
-      driverVehicle: String     – driver vehicle name
-      created: String           – creation timestamp ("YYYY-MM-DD HH:MM:SS" format)
-    }
-    ...
-  ]
+  {
+    count: Number               – total number of rides
+    rows:                       – matched rides
+      [
+        {
+          rideID: Number        – id
+          startLat: Number      – start lattitude
+          startLong: Number     – start longitude
+          endLat: Number        – end lattitude
+          endLong: Number       – end longitude
+          riderName: String     – rider name
+          driverName: String    – driver name
+          driverVehicle: String – driver vehicle name
+          created: String       – creation timestamp ("YYYY-MM-DD HH:MM:SS" format)
+        }
+        ...
+      ]
+  }
 ```
 
 ### GET /rides/:id
