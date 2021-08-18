@@ -146,10 +146,28 @@ describe('API tests', () => {
         });
 
         describe('GET /rides', () => {
-            it('should return rides', (done) => {
+            it('should return all rides', (done) => {
                 request(app)
                     .get('/rides')
-                    .expect([ride])
+                    .expect({ count: 1, rows: [ride] })
+                    .expect(200, done);
+            });
+
+            it('should return rides for pagination', (done) => {
+                request(app)
+                    .get('/rides?page=1&limit=1')
+                    .expect({ count: 1, rows: [ride] })
+                    .expect(200, done);
+            });
+
+            it('should reject empty pagination page', (done) => {
+                function isEmptyPage(res) {
+                    assert(res.body.error_code === 'RIDES_NOT_FOUND_ERROR');
+                }
+
+                request(app)
+                    .get('/rides?page=2&limit=1')
+                    .expect(isEmptyPage)
                     .expect(200, done);
             });
         });
