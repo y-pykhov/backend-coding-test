@@ -2,7 +2,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const rootDir = path.dirname(require.main.filename);
 
 const express = require('express');
 const app = express();
@@ -130,7 +129,7 @@ module.exports = (db) => {
     });
 
     app.get('/docs', (req, res) => {
-        fs.readFile(path.resolve(rootDir, 'docs', 'api.md'), 'utf8', function (err, text) {
+        fs.readFile(path.resolve('docs', 'api.md'), 'utf8', function (err, text) {
             if (err) {
                 logger.error(err);
                 return res.send({
