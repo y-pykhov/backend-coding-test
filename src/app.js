@@ -13,6 +13,8 @@ const jsonParser = bodyParser.json();
 const showdown  = require('showdown');
 const converter = new showdown.Converter();
 
+const logger = require('../utils/logger');
+
 module.exports = (db) => {
     app.get('/health', (req, res) => res.send('Healthy'));
 
@@ -64,6 +66,7 @@ module.exports = (db) => {
 
         const result = db.run('INSERT INTO Rides(startLat, startLong, endLat, endLong, riderName, driverName, driverVehicle) VALUES (?, ?, ?, ?, ?, ?, ?)', values, function (err) {
             if (err) {
+                logger.error(err);
                 return res.send({
                     error_code: 'SERVER_ERROR',
                     message: 'Unknown error'
@@ -72,6 +75,7 @@ module.exports = (db) => {
 
             db.all('SELECT * FROM Rides WHERE rideID = ?', this.lastID, function (err, rows) {
                 if (err) {
+                    logger.error(err);
                     return res.send({
                         error_code: 'SERVER_ERROR',
                         message: 'Unknown error'
@@ -86,6 +90,7 @@ module.exports = (db) => {
     app.get('/rides', (req, res) => {
         db.all('SELECT * FROM Rides', function (err, rows) {
             if (err) {
+                logger.error(err);
                 return res.send({
                     error_code: 'SERVER_ERROR',
                     message: 'Unknown error'
@@ -106,6 +111,7 @@ module.exports = (db) => {
     app.get('/rides/:id', (req, res) => {
         db.all(`SELECT * FROM Rides WHERE rideID='${req.params.id}'`, function (err, rows) {
             if (err) {
+                logger.error(err);
                 return res.send({
                     error_code: 'SERVER_ERROR',
                     message: 'Unknown error'
@@ -126,6 +132,7 @@ module.exports = (db) => {
     app.get('/docs', (req, res) => {
         fs.readFile(path.resolve(rootDir, 'docs', 'api.md'), 'utf8', function (err, text) {
             if (err) {
+                logger.error(err);
                 return res.send({
                     error_code: 'SERVER_ERROR',
                     message: 'Unknown error'
