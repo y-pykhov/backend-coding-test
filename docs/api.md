@@ -1,6 +1,12 @@
 # Documentation
 Below you can find information about goals of this project and description of available endpoints
 
+To view this documentation in web format do the following:
+1. ensure node (>8.6 and <= 10) and npm are installed
+2. run npm install
+3. run npm start
+4. open http://localhost:8010/docs in browser
+
 ## Purpose
 The purpose of this project is to provide a service for managing information about passenger transportation by car from one place to another
 
