@@ -25,7 +25,7 @@ describe('Services tests', () => {
             driverName: 'test Driver1',
             driverVehicle: 'test Vehicle1',
         };
-        let ride;
+        let ride, ride2;
 
         describe('createRide()', () => {
             it('should reject invalid start coordinates', async () => {
@@ -111,28 +111,46 @@ describe('Services tests', () => {
                 assert.strictEqual(ride.driverVehicle, rideData.driverVehicle);
                 assert.strictEqual(typeof ride.created, 'string');
             });
+
+            it('should handle sql injection', async () => {
+                const dangerousRideData = {
+                    ...rideData,
+                    driverVehicle: '); DROP TABLE Rides',
+                };
+
+                ride2 = await rideService.createRide(dangerousRideData);
+
+                assert.strictEqual(typeof ride2.rideID, 'number');
+                assert.strictEqual(ride2.driverVehicle, dangerousRideData.driverVehicle);
+            });
         });
 
         describe('getRides()', () => {
             it('should return all rides', async () => {
                 const result = await rideService.getRides();
 
-                assert.deepStrictEqual(result, { count: 1, rows: [ride] });
+                assert.deepStrictEqual(result, { count: 2, rows: [ride, ride2] });
             });
 
             it('should return rides for pagination', async () => {
                 const result = await rideService.getRides({ page: 1, limit: 1 });
 
-                assert.deepStrictEqual(result, { count: 1, rows: [ride] });
+                assert.deepStrictEqual(result, { count: 2, rows: [ride] });
             });
 
             it('should reject empty pagination page', async () => {
                 try {
-                    await rideService.getRides({ page: 2, limit: 1 });
+                    await rideService.getRides({ page: 3, limit: 1 });
                     assert(false, 'Should have thrown');
                 } catch (err) {
                     assert.strictEqual(err.error_code, 'RIDES_NOT_FOUND_ERROR');
                 }
+            });
+
+            it('should handle sql injection', async () => {
+                const result = await rideService.getRides({ limit: '1; DROP TABLE Rides' });
+
+                assert.deepStrictEqual(result, { count: 2, rows: [ride, ride2] });
             });
         });
 
@@ -150,6 +168,15 @@ describe('Services tests', () => {
                 const result = await rideService.getRide(ride.rideID);
 
                 assert.deepStrictEqual(result, ride);
+            });
+
+            it('should handle sql injection', async () => {
+                try {
+                    await rideService.getRide('2;!@$#%#^');
+                    assert(false, 'Should have thrown');
+                } catch (err) {
+                    assert.strictEqual(err.error_code, 'RIDES_NOT_FOUND_ERROR');
+                }
             });
         });
     });

@@ -43,7 +43,11 @@ describe('API tests', () => {
             driver_name: 'test Driver',
             driver_vehicle: 'test Vehicle',
         };
-        let ride;
+        let ride, ride2;
+
+        function isRideMissing(res) {
+            assert.strictEqual(res.body.error_code, 'RIDES_NOT_FOUND_ERROR');
+        }
 
         describe('POST /rides', () => {
             function isValidationError(res) {
@@ -136,44 +140,63 @@ describe('API tests', () => {
                     .expect(isRideCreated)
                     .expect(200, done);
             });
+
+            it('should handle sql injection', (done) => {
+                const dangerousRideData = {
+                    ...rideData,
+                    driver_vehicle: '); DROP TABLE Rides',
+                };
+
+                function isRideCreated(res) {
+                    ride2 = res.body;
+
+                    assert.strictEqual(typeof ride2.rideID, 'number');
+                    assert.strictEqual(ride2.driverVehicle, dangerousRideData.driver_vehicle);
+                }
+
+                request(app)
+                    .post('/rides')
+                    .send(dangerousRideData)
+                    .expect(isRideCreated)
+                    .expect(200, done);
+            });
         });
 
         describe('GET /rides', () => {
             it('should return all rides', (done) => {
                 request(app)
                     .get('/rides')
-                    .expect({ count: 1, rows: [ride] })
+                    .expect({ count: 2, rows: [ride, ride2] })
                     .expect(200, done);
             });
 
             it('should return rides for pagination', (done) => {
                 request(app)
                     .get('/rides?page=1&limit=1')
-                    .expect({ count: 1, rows: [ride] })
+                    .expect({ count: 2, rows: [ride] })
                     .expect(200, done);
             });
 
             it('should reject empty pagination page', (done) => {
-                function isEmptyPage(res) {
-                    assert.strictEqual(res.body.error_code, 'RIDES_NOT_FOUND_ERROR');
-                }
-
                 request(app)
-                    .get('/rides?page=2&limit=1')
-                    .expect(isEmptyPage)
+                    .get('/rides?page=3&limit=1')
+                    .expect(isRideMissing)
+                    .expect(200, done);
+            });
+
+            it('should handle sql injection', (done) => {
+                request(app)
+                    .get('/rides?limit=1; DROP TABLE Rides')
+                    .expect({ count: 2, rows: [ride, ride2] })
                     .expect(200, done);
             });
         });
 
         describe('GET /rides/:id', () => {
             it('should reject invalid ride id', (done) => {
-                function isInvalidRideId(res) {
-                    assert.strictEqual(res.body.error_code, 'RIDES_NOT_FOUND_ERROR');
-                }
-
                 request(app)
                     .get('/rides/&')
-                    .expect(isInvalidRideId)
+                    .expect(isRideMissing)
                     .expect(200, done);
             });
 
@@ -181,6 +204,13 @@ describe('API tests', () => {
                 request(app)
                     .get(`/rides/${ride.rideID}`)
                     .expect(ride)
+                    .expect(200, done);
+            });
+
+            it('should handle sql injection', (done) => {
+                request(app)
+                    .get('/rides/2;!@$#%#^')
+                    .expect(isRideMissing)
                     .expect(200, done);
             });
         });
