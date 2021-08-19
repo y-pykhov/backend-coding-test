@@ -8,7 +8,7 @@ const jsonParser = bodyParser.json();
 
 const RideService = require('../services/rideService');
 
-const logger = require('../../utils/logger');
+const logger = require('../logger');
 
 router.post('/', jsonParser, async (req, res) => {
     const rideData = {

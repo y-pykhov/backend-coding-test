@@ -10,7 +10,7 @@ const router = express.Router();
 const showdown  = require('showdown');
 const converter = new showdown.Converter();
 
-const logger = require('../../utils/logger');
+const logger = require('../logger');
 
 fs.readFileAsync = util.promisify(fs.readFile);
 

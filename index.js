@@ -5,7 +5,7 @@ const port = 8010;
 
 const app = require('./src/app');
 const db = require('./src/db');
-const logger = require('./utils/logger');
+const logger = require('./src/logger');
 
 app.listenAsync = util.promisify(app.listen);
 
