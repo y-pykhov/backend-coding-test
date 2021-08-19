@@ -3,11 +3,16 @@
 const assert = require('assert');
 
 const rideService = require('../src/services/rideService');
+
 const db = require('../src/db');
 
 describe('Services tests', () => {
+    before(() => {
+        return db.createTables();
+    });
+
     after(() => {
-        db.run('DELETE FROM Rides');
+        return db.runAsync('DELETE FROM Rides');
     });
 
     describe('Ride service', () => {
@@ -23,129 +28,128 @@ describe('Services tests', () => {
         let ride;
 
         describe('createRide()', () => {
-            function isValidationError(err) {
-                assert.strictEqual(err.error_code, 'VALIDATION_ERROR');
-            }
-
-            it('should reject invalid start coordinates', (done) => {
+            it('should reject invalid start coordinates', async () => {
                 const invalidRideData = {
                     ...rideData,
                     startLatitude: 91,
                 };
 
-                rideService.createRide(invalidRideData, function (err) {
-                    isValidationError(err);
-                    done();
-                });
+                try {
+                    await rideService.createRide(invalidRideData);
+                    assert(false, 'Should have thrown');
+                } catch (err) {
+                    assert.strictEqual(err.error_code, 'VALIDATION_ERROR');
+                }
             });
 
-            it('should reject invalid end coordinates', (done) => {
+            it('should reject invalid end coordinates', async () => {
                 const invalidRideData = {
                     ...rideData,
                     endLongitude: 181,
                 };
 
-                rideService.createRide(invalidRideData, function (err) {
-                    isValidationError(err);
-                    done();
-                });
+                try {
+                    await rideService.createRide(invalidRideData);
+                    assert(false, 'Should have thrown');
+                } catch (err) {
+                    assert.strictEqual(err.error_code, 'VALIDATION_ERROR');
+                }
             });
 
-            it('should reject empty rider name', (done) => {
+            it('should reject empty rider name', async () => {
                 const invalidRideData = {
                     ...rideData,
                     riderName: '',
                 };
 
-                rideService.createRide(invalidRideData, function (err) {
-                    isValidationError(err);
-                    done();
-                });
+                try {
+                    await rideService.createRide(invalidRideData);
+                    assert(false, 'Should have thrown');
+                } catch (err) {
+                    assert.strictEqual(err.error_code, 'VALIDATION_ERROR');
+                }
             });
 
-            it('should reject empty driver name', (done) => {
+            it('should reject empty driver name', async () => {
                 const invalidRideData = {
                     ...rideData,
                     driverName: '',
                 };
 
-                rideService.createRide(invalidRideData, function (err) {
-                    isValidationError(err);
-                    done();
-                });
+                try {
+                    await rideService.createRide(invalidRideData);
+                    assert(false, 'Should have thrown');
+                } catch (err) {
+                    assert.strictEqual(err.error_code, 'VALIDATION_ERROR');
+                }
             });
 
-            it('should reject empty vehicle name', (done) => {
+            it('should reject empty vehicle name', async () => {
                 const invalidRideData = {
                     ...rideData,
                     driverVehicle: '',
                 };
 
-                rideService.createRide(invalidRideData, function (err) {
-                    isValidationError(err);
-                    done();
-                });
+                try {
+                    await rideService.createRide(invalidRideData);
+                    assert(false, 'Should have thrown');
+                } catch (err) {
+                    assert.strictEqual(err.error_code, 'VALIDATION_ERROR');
+                }
             });
 
-            it('should create ride', (done) => {
-                rideService.createRide(rideData, function (err, result) {
-                    assert(!err);
+            it('should create ride', async () => {
+                ride = await rideService.createRide(rideData);
 
-                    ride = result;
-
-                    assert.strictEqual(typeof ride.rideID, 'number');
-                    assert.strictEqual(ride.startLat, rideData.startLatitude);
-                    assert.strictEqual(ride.startLong, rideData.startLongitude);
-                    assert.strictEqual(ride.endLat, rideData.endLatitude);
-                    assert.strictEqual(ride.endLong, rideData.endLongitude);
-                    assert.strictEqual(ride.riderName, rideData.riderName);
-                    assert.strictEqual(ride.driverName, rideData.driverName);
-                    assert.strictEqual(ride.driverVehicle, rideData.driverVehicle);
-                    assert.strictEqual(typeof ride.created, 'string');
-                    done();
-                });
+                assert.strictEqual(typeof ride.rideID, 'number');
+                assert.strictEqual(ride.startLat, rideData.startLatitude);
+                assert.strictEqual(ride.startLong, rideData.startLongitude);
+                assert.strictEqual(ride.endLat, rideData.endLatitude);
+                assert.strictEqual(ride.endLong, rideData.endLongitude);
+                assert.strictEqual(ride.riderName, rideData.riderName);
+                assert.strictEqual(ride.driverName, rideData.driverName);
+                assert.strictEqual(ride.driverVehicle, rideData.driverVehicle);
+                assert.strictEqual(typeof ride.created, 'string');
             });
         });
 
         describe('getRides()', () => {
-            it('should return all rides', (done) => {
-                rideService.getRides(null, function (err, result) {
-                    assert(!err);
-                    assert.deepStrictEqual(result, { count: 1, rows: [ride] });
-                    done();
-                });
+            it('should return all rides', async () => {
+                const result = await rideService.getRides();
+
+                assert.deepStrictEqual(result, { count: 1, rows: [ride] });
             });
 
-            it('should return rides for pagination', (done) => {
-                rideService.getRides({ page: 1, limit: 1 }, function (err, result) {
-                    assert(!err);
-                    assert.deepStrictEqual(result, { count: 1, rows: [ride] });
-                    done();
-                });
+            it('should return rides for pagination', async () => {
+                const result = await rideService.getRides({ page: 1, limit: 1 });
+
+                assert.deepStrictEqual(result, { count: 1, rows: [ride] });
             });
 
-            it('should reject empty pagination page', (done) => {
-                rideService.getRides({ page: 2, limit: 1 }, function (err) {
+            it('should reject empty pagination page', async () => {
+                try {
+                    await rideService.getRides({ page: 2, limit: 1 });
+                    assert(false, 'Should have thrown');
+                } catch (err) {
                     assert.strictEqual(err.error_code, 'RIDES_NOT_FOUND_ERROR');
-                    done();
-                });
+                }
             });
         });
 
         describe('getRide()', () => {
-            it('should reject invalid ride id', (done) => {
-                rideService.getRide('&', function (err) {
+            it('should reject invalid ride id', async () => {
+                try {
+                    await rideService.getRide('&');
+                    assert(false, 'Should have thrown');
+                } catch (err) {
                     assert.strictEqual(err.error_code, 'RIDES_NOT_FOUND_ERROR');
-                    done();
-                });
+                }
             });
 
-            it('should return ride by id', (done) => {
-                rideService.getRide(ride.rideID, function (err, result) {
-                    assert(!err);
-                    assert.deepStrictEqual(result, ride);
-                    done();
-                });
+            it('should return ride by id', async () => {
+                const result = await rideService.getRide(ride.rideID);
+
+                assert.deepStrictEqual(result, ride);
             });
         });
     });

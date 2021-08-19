@@ -7,8 +7,12 @@ const app = require('../src/app');
 const db = require('../src/db');
 
 describe('API tests', () => {
+    before(() => {
+        return db.createTables();
+    });
+
     after(() => {
-        db.run('DELETE FROM Rides');
+        return db.runAsync('DELETE FROM Rides');
     });
 
     describe('GET /health', () => {

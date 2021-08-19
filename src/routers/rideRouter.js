@@ -6,10 +6,11 @@ const router = express.Router();
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 
-const rideService = require('../services/rideService');
+const RideService = require('../services/rideService');
+
 const logger = require('../../utils/logger');
 
-router.post('/', jsonParser, (req, res) => {
+router.post('/', jsonParser, async (req, res) => {
     const rideData = {
         startLatitude: Number(req.body.start_lat),
         startLongitude: Number(req.body.start_long),
@@ -20,62 +21,62 @@ router.post('/', jsonParser, (req, res) => {
         driverVehicle: req.body.driver_vehicle,
     };
 
-    rideService.createRide(rideData, function (err, ride) {
-        if (err) {
-            if (err.error_code) {
-                return res.send(err);
-            }
-
-            logger.error(err);
-            return res.send({
-                error_code: 'SERVER_ERROR',
-                message: 'Unknown error',
-            });
-        }
+    try {
+        const ride = await RideService.createRide(rideData);
 
         res.send(ride);
-    });
+    } catch (err) {
+        if (err.error_code) {
+            return res.send(err);
+        }
+
+        logger.error(err);
+        res.send({
+            error_code: 'SERVER_ERROR',
+            message: 'Unknown error',
+        });
+    }
 });
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const page = Math.floor(req.query.page);
     const limit = Math.floor(req.query.limit);
 
-    rideService.getRides({ page, limit }, function (err, rides) {
-        if (err) {
-            if (err.error_code) {
-                return res.send(err);
-            }
-
-            logger.error(err);
-            return res.send({
-                error_code: 'SERVER_ERROR',
-                message: 'Unknown error',
-            });
-        }
+    try {
+        const rides = await RideService.getRides({ page, limit });
 
         res.send(rides);
-    });
-});
-
-router.get('/:id', (req, res) => {
-    const id = req.params.id;
-
-    rideService.getRide(id, function (err, ride) {
-        if (err) {
-            if (err.error_code) {
-                return res.send(err);
-            }
-
-            logger.error(err);
-            return res.send({
-                error_code: 'SERVER_ERROR',
-                message: 'Unknown error',
-            });
+    } catch (err) {
+        if (err.error_code) {
+            return res.send(err);
         }
 
+        logger.error(err);
+        res.send({
+            error_code: 'SERVER_ERROR',
+            message: 'Unknown error',
+        });
+    }
+});
+
+router.get('/:id', async (req, res) => {
+    const id = req.params.id;
+
+    try {
+        const ride = await RideService.getRide(id);
+
         res.send(ride);
-    });
+    } catch (err) {
+        if (err.error_code) {
+            return res.send(err);
+        }
+
+        logger.error(err);
+        res.send({
+            error_code: 'SERVER_ERROR',
+            message: 'Unknown error',
+        });
+    }
 });
 
 module.exports = router;
