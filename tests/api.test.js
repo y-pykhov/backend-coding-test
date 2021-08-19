@@ -3,23 +3,12 @@
 const request = require('supertest');
 const assert = require('assert');
 
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database(':memory:');
-
-const app = require('../src/app')(db);
-const buildSchemas = require('../src/schemas');
+const app = require('../src/app');
+const db = require('../src/db');
 
 describe('API tests', () => {
-    before((done) => {
-        db.serialize((err) => {
-            if (err) {
-                return done(err);
-            }
-
-            buildSchemas(db);
-
-            done();
-        });
+    after(() => {
+        db.run('DELETE FROM Rides');
     });
 
     describe('GET /health', () => {
@@ -54,7 +43,7 @@ describe('API tests', () => {
 
         describe('POST /rides', () => {
             function isValidationError(res) {
-                assert(res.body.error_code === 'VALIDATION_ERROR');
+                assert.strictEqual(res.body.error_code, 'VALIDATION_ERROR');
             }
 
             it('should reject invalid start coordinates', (done) => {
@@ -112,7 +101,7 @@ describe('API tests', () => {
             it('should reject empty vehicle name', (done) => {
                 const invalidRideData = {
                     ...rideData,
-                    driver_name: '',
+                    driver_vehicle: '',
                 };
 
                 request(app)
@@ -123,24 +112,24 @@ describe('API tests', () => {
             });
 
             it('should create ride', (done) => {
-                function isRideSaved(res) {
-                    ride = res.body[0];
+                function isRideCreated(res) {
+                    ride = res.body;
 
-                    assert(typeof ride.rideID === 'number');
-                    assert(ride.startLat === rideData.start_lat);
-                    assert(ride.startLong === rideData.start_long);
-                    assert(ride.endLat === rideData.end_lat);
-                    assert(ride.endLong === rideData.end_long);
-                    assert(ride.riderName === rideData.rider_name);
-                    assert(ride.driverName === rideData.driver_name);
-                    assert(ride.driverVehicle === rideData.driver_vehicle);
-                    assert(typeof ride.created === 'string');
+                    assert.strictEqual(typeof ride.rideID, 'number');
+                    assert.strictEqual(ride.startLat, rideData.start_lat);
+                    assert.strictEqual(ride.startLong, rideData.start_long);
+                    assert.strictEqual(ride.endLat, rideData.end_lat);
+                    assert.strictEqual(ride.endLong, rideData.end_long);
+                    assert.strictEqual(ride.riderName, rideData.rider_name);
+                    assert.strictEqual(ride.driverName, rideData.driver_name);
+                    assert.strictEqual(ride.driverVehicle, rideData.driver_vehicle);
+                    assert.strictEqual(typeof ride.created, 'string');
                 }
 
                 request(app)
                     .post('/rides')
                     .send(rideData)
-                    .expect(isRideSaved)
+                    .expect(isRideCreated)
                     .expect(200, done);
             });
         });
@@ -162,7 +151,7 @@ describe('API tests', () => {
 
             it('should reject empty pagination page', (done) => {
                 function isEmptyPage(res) {
-                    assert(res.body.error_code === 'RIDES_NOT_FOUND_ERROR');
+                    assert.strictEqual(res.body.error_code, 'RIDES_NOT_FOUND_ERROR');
                 }
 
                 request(app)
@@ -175,7 +164,7 @@ describe('API tests', () => {
         describe('GET /rides/:id', () => {
             it('should reject invalid ride id', (done) => {
                 function isInvalidRideId(res) {
-                    assert(res.body.error_code === 'RIDES_NOT_FOUND_ERROR');
+                    assert.strictEqual(res.body.error_code, 'RIDES_NOT_FOUND_ERROR');
                 }
 
                 request(app)
@@ -187,7 +176,7 @@ describe('API tests', () => {
             it('should return ride by id', (done) => {
                 request(app)
                     .get(`/rides/${ride.rideID}`)
-                    .expect([ride])
+                    .expect(ride)
                     .expect(200, done);
             });
         });
