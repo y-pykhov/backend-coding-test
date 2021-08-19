@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "nyc mocha tests",
+    "test:load": "tsc && forever start dist/index.js && artillery run test.yml && forever stop dist/index.js",
     "start": "tsc && node dist/index.js"
   },
   "pre-push": [
@@ -39,8 +40,10 @@
     "winston": "^3.3.3"
   },
   "devDependencies": {
+    "artillery": "^1.7.7",
     "eslint": "^7.32.0",
     "eslint-plugin-node": "^11.1.0",
+    "forever": "^4.0.1",
     "mocha": "^6.1.4",
     "nyc": "^15.1.0",
     "pre-push": "^0.1.1",

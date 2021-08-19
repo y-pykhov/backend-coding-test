@@ -1,0 +1,28 @@
+config:
+  target: http://localhost:8010
+  phases:
+    - duration: 30
+      arrivalRate: 100
+  ensure:
+    p99: 50
+scenarios:
+  - name: API load testing
+    flow:
+      - get:
+          url: /health
+      - get:
+          url: /docs
+      - post:
+          url: /rides
+          json:
+            start_lat: 30
+            start_long: 30
+            end_lat: 35
+            end_long: 35
+            rider_name: test Rider
+            driver_name: test Driver
+            driver_vehicle: test Vehicle
+      - get:
+          url: /rides?page=1&limit=5
+      - get:
+          url: /rides/1
