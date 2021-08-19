@@ -2,75 +2,45 @@
 
 const db = require('../db');
 
-const rideModel = {
-    createRide(rideData, cb) {
-        const values = [rideData.startLatitude, rideData.startLongitude, rideData.endLatitude, rideData.endLongitude, rideData.riderName, rideData.driverName, rideData.driverVehicle];
+const RideModel = {
+    createRide: (rideData) => {
+        return new Promise((resolve, reject) => {
+            const values = [rideData.startLatitude, rideData.startLongitude, rideData.endLatitude, rideData.endLongitude, rideData.riderName, rideData.driverName, rideData.driverVehicle];
 
-        db.run('INSERT INTO Rides(startLat, startLong, endLat, endLong, riderName, driverName, driverVehicle) VALUES (?, ?, ?, ?, ?, ?, ?)', values, function (err) {
-            if (err) {
-                return cb(err);
-            }
-
-            db.get('SELECT * FROM Rides WHERE rideID = ?', this.lastID, cb);
-        });
-    },
-
-    getRides(options, cb) {
-        db.get('SELECT COUNT(*) as count FROM Rides', function (err, { count }) {
-            if (err) {
-                return cb(err);
-            }
-
-            if (count === 0) {
-                return cb({
-                    error_code: 'RIDES_NOT_FOUND_ERROR',
-                    message: 'Could not find any rides',
-                });
-            }
-
-            let limitClause = '';
-            if (options && options.limit) {
-                limitClause = `LIMIT ${options.limit}`;
-            }
-
-            let offsetClause = '';
-            if (options && options.offset) {
-                offsetClause = `OFFSET ${options.offset}`;
-            }
-
-            db.all(`SELECT * FROM Rides ${limitClause} ${offsetClause}`, function (err, rows) {
+            db.run('INSERT INTO Rides(startLat, startLong, endLat, endLong, riderName, driverName, driverVehicle) VALUES (?, ?, ?, ?, ?, ?, ?)', values, function (err) {
                 if (err) {
-                    return cb(err);
+                    return reject(err);
                 }
 
-                if (rows.length === 0) {
-                    return cb({
-                        error_code: 'RIDES_NOT_FOUND_ERROR',
-                        message: 'Could not find any rides for specified page and limit',
-                    });
-                }
-
-                cb(null, { count, rows });
+                resolve(db.getAsync('SELECT * FROM Rides WHERE rideID = ?', this.lastID));
             });
         });
     },
 
-    getRide(id, cb) {
-        db.get('SELECT * FROM Rides WHERE rideID = ?', [id], function (err, ride) {
-            if (err) {
-                return cb(err);
-            }
+    getRides: async (options) => {
+        let paginationQuery = '';
+        let values = [];
 
-            if (!ride) {
-                return cb({
-                    error_code: 'RIDES_NOT_FOUND_ERROR',
-                    message: 'Could not find ride with specified id',
-                });
-            }
+        if (options && options.limit) {
+            paginationQuery += ' LIMIT ?';
+            values.push(options.limit);
+        }
+        if (options && options.offset) {
+            paginationQuery += ' OFFSET ?';
+            values.push(options.offset);
+        }
 
-            cb(null, ride);
-        });
+        const [{ count }, rows] = await Promise.all([
+            db.getAsync('SELECT COUNT(*) as count FROM Rides'),
+            db.allAsync(`SELECT * FROM Rides ${paginationQuery}`, values),
+        ]);
+
+        return { count, rows };
+    },
+
+    getRide: (id) => {
+        return db.getAsync('SELECT * FROM Rides WHERE rideID = ?', [id]);
     },
 };
 
-module.exports = rideModel;
+module.exports = RideModel;

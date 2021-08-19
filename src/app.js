@@ -3,10 +3,10 @@
 const express = require('express');
 const app = express();
 
-const commonRouter = require('./routers/commonRouter');
-app.use(commonRouter);
+const CommonRouter = require('./routers/commonRouter');
+app.use(CommonRouter);
 
-const ridesRouter = require('./routers/rideRouter');
-app.use('/rides', ridesRouter);
+const RideRouter = require('./routers/rideRouter');
+app.use('/rides', RideRouter);
 
 module.exports = app;
